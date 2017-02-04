@@ -74,13 +74,17 @@ export default class WechatCore {
 
         // eslint-disable-next-line
         eval(res.data)
-        assert.notEqual(window.code, 400, res)
+
+        // 400 is a normal return, not an error, it stands for barcode timeout
+        // assert.notEqual(window.code, 400, res)
 
         if (window.code === 200) {
           this.CONF = getCONF(window.redirect_uri.match(/(?:\w+\.)+\w+/)[0])
           this.rediUri = window.redirect_uri
-        } else if (window.code === 201 && window.userAvatar) {
-          this.user.userAvatar = window.userAvatar
+        } else if (window.code === 201) {
+          if (window.userAvatar) {
+            this.user.userAvatar = window.userAvatar
+          }
         }
         return window
       })

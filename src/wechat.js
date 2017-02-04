@@ -127,15 +127,30 @@ class Wechat extends WechatCore {
     const checkLogin = () => {
       return this.checkLogin()
         .then(res => {
-          if (res.code === 201 && res.userAvatar) {
-            this.emit('user-avatar', res.userAvatar)
+          debug('checkLogin: ', res.code)
+          switch (res.code) {
+            case 200:
+              return res;
+            case 201:
+              if (res.userAvatar) {
+                this.emit('user-avatar', res.userAvatar)
+              }
+              return checkLogin()
+            case 408:
+              return checkLogin()
+            default: //400
+              throw new Error('Barcode timeout')
           }
-          if (res.code !== 200) {
-            debug('checkLogin: ', res.code)
-            return checkLogin()
-          } else {
-            return res
-          }
+
+          // if (res.code === 201 && res.userAvatar) {
+          //   this.emit('user-avatar', res.userAvatar)
+          // }
+          // if (res.code !== 200) {
+          //   debug('checkLogin: ', res.code)
+          //   return checkLogin()
+          // } else {
+          //   return res
+          // }
         })
     }
     return this.getUUID()
@@ -183,11 +198,13 @@ class Wechat extends WechatCore {
   }
 
   stop() {
-    this.emit('logout')
-    this.state = this.CONF.STATE.logout
-    clearTimeout(this.retryPollingId)
-    clearTimeout(this.checkPollingId)
-    this.logout()
+    if (this.state === this.CONF.STATE.login) {
+      this.emit('logout')
+      this.state = this.CONF.STATE.logout
+      clearTimeout(this.retryPollingId)
+      clearTimeout(this.checkPollingId)
+      this.logout()
+    }
   }
 
   checkPolling() {
